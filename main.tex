@@ -146,7 +146,7 @@ Our best result from these experiments come from using loss terms of Equation 4 
 
 \begin{figure*}
     \centering
-    \includegraphics[width=\linewidth, height=8cm]{architecture.png}
+    \includegraphics[width=\linewidth, height=6cm]{architecture.png}
     \caption{Our Unsupervised architecture for Subsection 3.3 which contains DepthNet, PoseNet and MotionNet}
     \label{fig:arch}
 \end{figure*}
@@ -200,6 +200,17 @@ Through experiments we observed that by only enforcing the depth and normal orth
   \caption{Patched-based depth and normal constraint. For each pixel, we reconstruct a patch in the 3D space. The center of the patch $c(x)$ is obtained by back-projecting the pixel with the estimated depth, intrinsic matrix and extrinsic matrix. The orientation of the patch is given by estimated normal $N(x)$.}
   \label{fig:patch}
 \end{figure}
+\begin{figure}
+  \includegraphics[width=\columnwidth ]{network.png}
+  \caption{Network architectures for different experiments. (a) For the edge-aware experiments, the network architecture is based on (include related work), where we compute the normal directly from the predicted depth. (b)While evaluating the patch based photo-consistency constraints, the normal and depth net shares a single encoder and uses different decoders to separately predict depth. (c)To train the normal network with only the depth and normal orthogonality constraint, we froze the depth network and individually trained the normal network with an additional estimated depth input to get reasonable results.}
+  \label{fig:network}
+\end{figure}
+
+\begin{figure*}[ht]
+  \includegraphics[width=\linewidth]{depth_KITTI.png}
+  \caption{(a) Experiment results on KITTI with only the depth and normal constraint mentioned in Subsection 3.4.1 (b) Patch-based experiment results on KITTI mentioned in Subsection 3.4.2}
+\label{normal:depth}
+\end{figure*}
 
 %% Depth Result Tabl Here
 \begin{table*}[htbp]
@@ -234,16 +245,10 @@ Through experiments we observed that by only enforcing the depth and normal orth
   \textbf{Ours(sub section 3.3)} & No & \textbf{0.140} &     \textbf{1.059} &     \textbf{5.374} &     \textbf{0.215} &     \textbf{0.816} &     \textbf{0.942} &     \textbf{0.978}\\
  \hline
 \end{tabular}
-\caption{Monocular depth results on the KITTI 2015 \cite{kitti} by the split of Eigen \textit{et al.} \cite{eigen2014depth}. Result of Casser \textit{et al.} (C) is obtained using their provided checkpoint. Casser \textit{et al.} (R) is taken from their paper that has additional refinement during test time.} Ours(Subsection 3.3) based on work of \cite{casser2018depth} doesn't use refinement but beats result of provided checkpoint. \label{tab:depth_pred}
+\caption{Monocular depth results on the KITTI 2015 \cite{kitti} by the split of Eigen \textit{et al.} \cite{eigen2014depth}. Result of Casser \textit{et al.} (C) is obtained using their provided checkpoint. Casser \textit{et al.} (R) is taken from their paper that has additional refinement during test time. Ours(Subsection 3.3) based on work of \cite{casser2018depth} doesn't use refinement but beats result of provided checkpoint.} \label{tab:depth_pred}
 \end{table*}
 
-
 \section{Experiments}
-\begin{figure}
-  \includegraphics[width=\columnwidth ]{network.png}
-  \caption{Network architectures for different experiments. (a) For the edge-aware experiments, the network architecture is based on (include related work), where we compute the normal directly from the predicted depth. (b)While evaluating the patch based photo-consistency constraints, the normal and depth net shares a single encoder and uses different decoders to separately predict depth. (c)To train the normal network with only the depth and normal orthogonality constraint, we froze the depth network and individually trained the normal network with an additional estimated depth input to get reasonable results.}
-  \label{fig:network}
-\end{figure}
 
 \subsection{Datasets and metrics}
 We conduct experiments on depth and normal estimation. The performances are evaluated on the KITTI dataset \cite{kitti}. For depth evaluation, we adopt metrics used in Zhou \textit{et al.} \cite{zhou2017unsupervised}, details are shown in Table \ref{table1:depth_eval}.
@@ -255,6 +260,8 @@ We conduct experiments on depth and normal estimation. The performances are eval
   \label{fig:depth_result}
 \end{figure}
 
+\subsection{Training}
+
 \begin{table*}
 \centering
 \begin{tabular}{l|l}
@@ -265,38 +272,29 @@ We conduct experiments on depth and normal estimation. The performances are eval
 \caption{Depth evaluation metrics}\label{table1:depth_eval}
 \end{table*}
 
-
-\subsection{Training}
-\begin{figure*}[ht]
-  \includegraphics[width=\linewidth]{depth_KITTI.png}
-  \caption{(a) Experiment results on KITTI with only the depth and normal constraint mentioned in Subsection 3.4.1 (b) Patch-based experiment results on KITTI mentioned in Subsection 3.4.2}
-\label{normal:depth}
-\end{figure*}
-
 Similar to \cite{zhou2017unsupervised}, we implemented the system using TensorFlow framework along with photo-consistency loss $L_{vs}$. For all the experiments, the common setup is: Adam optimizer with $\beta_1 = 0.9$, $\beta_2 = 0.999$, learning rate of $0.0002$ and mini-batch size of 4. All the experiments are performed with image sequences of size 3. We resize the images to $128 \times 416$ during training. We use the eigen split of KITTI for training and evaluation. Additional experimental setups for different methods are outlined below.
 
 %Similar to \cite{zhou2017unsupervised}, we implemented the system using TensorFlow framework. For all the experiments, we set $\lambda_s = 0.5=l$ (l is the downs-caling factor for the corresponding scale) and $\lambda_e = 0.2$. During training, we used batch normalization for all the layers except for the output layers, and the Adam optimizer with $\beta_1 = 0.9$, $\beta_2 = 0.999$, learning rate of $0.0002$ and mini-batch size of 4. The training typically converges after about 150K iterations. All the experiments are performed with image sequences captured with a monocular camera. We resize the images to $128 × 416$ during training.
 %Similar to Yang et al.\cite{yang2018lego}, we evaluate the normal map(either from direct-prediction or from depth inference) by comparing to the ground truth normal, which is generated by applying depth-to-normal layer on interpolated depth ground truth. The normal evaluation is performed
 %on KITTI dataset. The comparison of normal evaluations on KITTI split is presented in???. \\
+
 \noindent \textbf{Edge-aware depth experiments.}
 Architecture for approach outlined in Subsection 3.2 is shown in Figure \ref{fig:network}a. We obtain the surface normal computed using the estimated depth and calculate the loss as mentioned in \cite{yang2017unsupervised}. The best result that we got was with regularization loss $L_s$ set to 0.5 and $L_{pixel}$ set to 0.3 with RGB as input. The result of same is shown in Table \ref{tab:depth_pred}.
 %when the input is the RGB image only. When using the semantic mask as an additional input to the network, we set the edge-weight to 0.3.
 %To leverage the predicted surface normal in our loss function, we also added smooth loss term for surface normal as we did for the depth and the weight is set to 0.5. The results are shown in the \ref{table1:depth_eval}.
-\\
-\textbf{Evaluation on the depth and normal orthogonality constraint.}
+
+\noindent \textbf{Evaluation on the depth and normal orthogonality constraint.}
 We set the weight of $L_{orth}$ to 0.001. Yet, the results aren't very promising as can be seen in Table \ref{tab:depth_pred}. The network can not generate meaningful surface normal and also impaired the depth predictions. Thus, we independently train the NormalNet along with the pre-trained DepthNet to obtain more meaningful results shown in Figure \ref{fig:network}c. As can be seen in Figure \ref{normal:depth}, we can roughly determine the road of the scene but geometric details are coarse.
-\\
-\textbf{Evaluation on the patch-based photometric constraint}
+
+\noindent \textbf{Evaluation on the patch-based photometric constraint.}
 We evaluate the patch-based photometric constraint by adding the $L_{patch}$ term in our loss function and setting its weight to 0.1. We implement the network architecture of this experiment as shown in Figure \ref{fig:network}b. In Figure \ref{normal:depth} we show a qualitative result of this approach. As can been seen, the estimated normal could roughly capture the contours of the scene; however, there are still some spurious blobs in the image. 
 
 %------------------------------------------------------------------------
 \section{Conclusion and Future Work}
 
-Based on the notion that deep network approaches benefit from explicit geometric cues and constraints,
+We tried several approaches to estimate better depth and normal predictions by offering geometric cues and constraints. In our experiments, we observed that both instance-level and semantic information generate more desirable depth results. Our best depth estimation approach uses instance-level segmentation to model dynamic object motion along with semantic priors(Subsection 3.3). Also, we observed that by restraining the network with the depth and normal orthogonality and patch-based constraint, we can also estimate the surface normal of the scene, which is beneficial for future applications. 
 
-we tried several approaches to acquire better depth and normal predictions by offering geometric cues and constraints. In our experiments, we observed that both instance-level and semantic information could generate more desirable depth results. By restraining the network with the depth and normal orthogonality and patch-based constraint, we can also estimate the surface normal of the scene, which is beneficial for future applications. 
-
-In the future, we plan to experiment the refinement methodology as explained in \cite{casser2018depth} to further improve the depth prediction. Currently, since our normal network is incapable of generating high quality normal maps as compared to non-learning based approaches, we will continue to improve our network with different geometric constraints and architectural designs. Last, we will further experiment on different datasets such as the Cityscapes dataset to show the generalizabiltiy of our framework.
+In the future, we plan to experiment the refinement methodology as explained in \cite{casser2018depth} to further improve the depth prediction of our best approach. Currently, since our NormalNet is incapable of generating high quality normal maps as compared to non-learning based approaches, we will continue to improve our network with different geometric constraints and architectural designs. Lastly, we would like to show scalability of our approach on different dataset like Cityscape and Make3D.
 
 %------------------------------------------------------------------------
 
